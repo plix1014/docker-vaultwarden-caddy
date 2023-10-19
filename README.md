@@ -16,7 +16,7 @@ custom caddy image based on [caddy-builder container](https://hub.docker.com/_/c
 * duckdns
 plugins.
 
-* see [lucaslorentz/caddy-docker-proxy](https://caddy.community/t/caddy-docker-with-duckdns/18682)
+see [Caddy Docker with DuckDNS](https://caddy.community/t/caddy-docker-with-duckdns/18682)
 
 ### .env
 
