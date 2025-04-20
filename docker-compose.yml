@@ -1,5 +1,4 @@
 ---
-version: '3'
 
 # https://linuxiac.com/how-to-install-vaultwarden-password-manager-with-docker/
 services:
@@ -7,13 +6,9 @@ services:
     image: ${vaultwarden_image}
     container_name: vaultwarden
     restart: always
-    labels:
-      caddy: ${CADDY_DOMAIN}:443
-      caddy.tls.dns: duckdns ${DUCKDNS_TOKEN}
-      caddy.reverse_proxy: "vaultwarden:8001"
     environment:
       ROCKET_PORT: 8001
-      WEBSOCKET_ENABLED: true
+      WEBSOCKET_ENABLED: false
       SIGNUPS_ALLOWED: true
       INVITATIONS_ALLOWED: false
       ADMIN_TOKEN: ${ADMIN_TOKEN}
@@ -22,7 +17,7 @@ services:
       SMTP_HOST: ${SMTP_HOST}
       SMTP_FROM: ${SMTP_FROM}
       SMTP_PORT: ${SMTP_PORT}
-      SMTP_SECURITY: ${SMTP_SECURITY} 
+      SMTP_SECURITY: ${SMTP_SECURITY}
       SMTP_USERNAME: ${SMTP_USERNAME}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
     volumes:
@@ -36,16 +31,38 @@ services:
   caddy:
     image: ${caddy_image}
     container_name: reverse-proxy
+    dns:
+      - 1.1.1.1
+    labels:
+      caddy: ""
+      caddy.debug: ""
+      caddy.log: ""
+      caddy.log.format: console
+      caddy.email: "${caddy_email}"
+      # for testing only
+      #caddy.acme_ca: "https://acme-staging-v02.api.letsencrypt.org/directory"
+      caddy_1: "${CADDY_DOMAIN}:443"
+      caddy_1.tls: ""
+      caddy_1.tls.issuer: acme
+      caddy_1.tls.issuer.dns: "duckdns ${DUCKDNS_TOKEN}"
+      caddy_1.tls.issuer.propagation_delay: 300s
+      caddy_1.tls.issuer.propagation_timeout: 600s
+      caddy_1.tls.issuer.resolvers: 1.1.1.1
+      caddy_1.reverse_proxy: "vaultwarden:8001"
     ports:
       - 80:80
       - 443:443
     environment:
       - CADDY_INGRESS_NETWORKS=vwnet
+      - DUCKDNS_TOKEN=${DUCKDNS_TOKEN}
+      - DOMAIN=https://${CADDY_DOMAIN}
+      - CADDY_LOG_LEVEL=DEBUG
     networks:
       - vwnet
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/docker/vaultwarden/caddy-data:/data
+      - /opt/docker/vaultwarden/caddy-config:/config
     restart: always
 
   backup:
@@ -53,13 +70,13 @@ services:
     container_name: vaultwarden-backup
     restart: always
     environment:
-       TIMEZONE: ${TZ}
-       RCLONE_REMOTE_NAME: 'BitwardenBackup'
-       RCLONE_GLOBAL_FLAG: '-v'
-       CRON: "${CRON}"
-       ZIP_PASSWORD: "${ZIP_PASSWORD}"
-       BACKUP_FILE_SUFFIX: "${BACKUP_FILE_SUFFIX}"
-       BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS}
+      TIMEZONE: ${TZ}
+      RCLONE_REMOTE_NAME: 'BitwardenBackup'
+      RCLONE_GLOBAL_FLAG: '-v'
+      CRON: "${CRON}"
+      ZIP_PASSWORD: "${ZIP_PASSWORD}"
+      BACKUP_FILE_SUFFIX: "${BACKUP_FILE_SUFFIX}"
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS}
     volumes:
       - /opt/docker/vaultwarden/data:/bitwarden/data/
       - /opt/docker/vaultwarden/vwbackup:/config/
@@ -71,6 +88,7 @@ volumes:
   vaultwarden-rclone-data:
     name: vaultwarden-rclone-data
   caddy_data: {}
+  caddy_config:
 
 networks:
   vwnet:
