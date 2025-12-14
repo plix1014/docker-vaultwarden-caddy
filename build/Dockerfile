@@ -1,6 +1,5 @@
 
-# default value if no build argument is provided
-ARG CADDY_VERSION=2.7.4
+ARG CADDY_VERSION
 
 #-----------------------------------------------------------------------
 FROM caddy:${CADDY_VERSION}-builder AS builder
